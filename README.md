@@ -7,7 +7,7 @@ then displays a graph of the percentage of each realtime second that is spent in
 Setup of the "mod" is a little complex because I can't be bothered to make it any nicer.
 
 * Load solution into VS2013
-* Build Release configuration
+* Build Release configuration (you will probably need to fix the references to point at your KSP's assemblies)
 * Find your KSP_Data\Managed folder
 * Copy Assembly-CSharp.dll as Assembly-CSharp.orig.dll
 * Copy TimerLib\bin\Release\TimerLib.dll into KSP_Data\Managed
