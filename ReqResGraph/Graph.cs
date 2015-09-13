@@ -25,6 +25,10 @@ namespace ReqResGraph
 
         bool fullUpdate = false;
 
+        const String lastValuePattern = "Last: {0}%";
+        double lastValue;
+        String lastValueStr;
+
         Color[] blackLine;
         Color[] redLine;
         Color[] greenLine;
@@ -54,6 +58,9 @@ namespace ReqResGraph
             for (int i = 0; i < width; i++)
                 values[i] = 0.0;
 
+            lastValue = 0.0;
+            lastValueStr = String.Format(lastValuePattern, lastValue.ToString("N2"));
+
             startTime = Stopwatch.GetTimestamp();
             ticksPerSec = Stopwatch.Frequency;
             print("ticksPerSec = " + ticksPerSec);
@@ -81,6 +88,12 @@ namespace ReqResGraph
                 values[valIndex] = ((double)ticksDelta * 100.0 / (double)timeDelta);
                 print("value = " + values[valIndex]);
                 //print("calls = " + TimerLib.Utils.GetNumCalls());
+
+                if (values[valIndex] != lastValue)
+                {
+                    lastValue = values[valIndex];
+                    lastValueStr = String.Format(lastValuePattern, lastValue.ToString("N2"));
+                }
 
                 startTime = endTime;
                 ticksAtStart = ticksAtEnd;
@@ -159,13 +172,19 @@ namespace ReqResGraph
                 graphHeight = GUILayout.Height(height);
 
             if (showUI)
-                windowPos = GUILayout.Window(2461275, windowPos, WindowGUI, "PhysicsGraph", wndWidth, wndHeight);
+                windowPos = GUILayout.Window(2461275, windowPos, WindowGUI, "Profile Graph", wndWidth, wndHeight);
         }
 
         public void WindowGUI(int windowID)
         {
             GUILayout.BeginVertical();
+
             GUILayout.Box(texGraph, wndWidth, graphHeight);
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(lastValueStr, labelStyle);
+            GUILayout.EndHorizontal();
+
             GUILayout.EndVertical();
 
             GUI.DragWindow();
