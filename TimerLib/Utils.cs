@@ -40,6 +40,11 @@ namespace TimerLib
             return numCalls;
         }
 
+        public static void ResetNumCalls()
+        {
+            numCalls = 0;
+        }
+
         public static long GetTotalTicks()
         {
             return totalTicks;
