@@ -30,16 +30,7 @@ namespace PatchAsm
                 MethodDefinition startFunc = tUtils.Methods.First(x => x.Name == "StartTimed");
                 MethodDefinition stopFunc = tUtils.Methods.First(x => x.Name == "StopTimed");
 
-                //DumpWholeFunction(asm, "Part", "requestResource");
-                //PatchFunc(asm, "Part", "requestResource", startFunc, stopFunc);
-                //DumpWholeFunction(asm, "Part", "requestResource");
-
-                //DumpWholeFunction(asm, "ResourceConverter", "ProcessRecipe");
                 PatchFunc(asm, "ResourceConverter", "ProcessRecipe", startFunc, stopFunc);
-                //DumpWholeFunction(asm, "ResourceConverter", "ProcessRecipe");
-
-                //PatchFunc(asm, "ResourceBroker", "RequestResource", startFunc, stopFunc);
-                //PatchFunc(asm, "ResourceBroker", "StoreResource", startFunc, stopFunc);
 
                 log.Debug("Writing file {0}", outfilename);
                 asm.Write(outfilename);
@@ -54,6 +45,9 @@ namespace PatchAsm
 
         private void PatchFunc(AssemblyDefinition asm, String TypeName, String FuncName, MethodDefinition startFunc, MethodDefinition stopFunc)
         {
+            log.Info("Patching {0}.{1}", TypeName, FuncName);
+            //DumpWholeFunction(asm, "ResourceConverter", "ProcessRecipe", "Before");
+
             TypeDefinition type = asm.MainModule.GetType(TypeName);
 
             MethodDefinition func = type.Methods.First(x => x.Name == FuncName);
@@ -73,10 +67,15 @@ namespace PatchAsm
 
             // Insert call to start at the beginning
             proc.InsertBefore(insList[0], callStart);
+
+            //DumpWholeFunction(asm, "ResourceConverter", "ProcessRecipe", "After");
+            log.Info("{0}.{1} patched ok", TypeName, FuncName);
         }
 
-        private void DumpWholeFunction(AssemblyDefinition asmdef, string typeName, string functionName)
+        private void DumpWholeFunction(AssemblyDefinition asmdef, string typeName, string functionName, string message)
         {
+            log.Info(message);
+
             var type = asmdef.MainModule.GetType(typeName);
             var func = type.Methods.First(x => x.Name == functionName);
 
