@@ -10,20 +10,29 @@ namespace TimerLib
         private static long numCalls = 0;
         private static long totalTicks = 0;
         private static long startTicks = 0;
+        private static long depth = 0;
 
         public static void StartTimed()
         {
-            startTicks = Stopwatch.GetTimestamp();
-            //MonoBehaviour.print("StartTimed start = " + startTicks);
+            if (depth == 0)
+            {
+                startTicks = Stopwatch.GetTimestamp();
+                //MonoBehaviour.print("StartTimed start = " + startTicks);
+            }
+            depth++;
         }
 
         public static void StopTimed()
         {
-            long endTicks = Stopwatch.GetTimestamp();
-            long deltaTicks = endTicks - startTicks;
-            totalTicks += deltaTicks;
+            depth--;
+            if (depth == 0)
+            {
+                long endTicks = Stopwatch.GetTimestamp();
+                long deltaTicks = endTicks - startTicks;
+                totalTicks += deltaTicks;
+                //MonoBehaviour.print("StopTimed end = " + endTicks + "  delta = " + deltaTicks);
+            }
             numCalls++;
-            //MonoBehaviour.print("StopTimed end = " + endTicks + "  delta = " + deltaTicks);
         }
 
         public static long GetNumCalls()
