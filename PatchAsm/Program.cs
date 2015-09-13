@@ -63,7 +63,14 @@ namespace PatchAsm
             var callStart = proc.Create(OpCodes.Call, func.Module.Import(startFunc));
             var callStop = proc.Create(OpCodes.Call, func.Module.Import(stopFunc));
 
-            proc.InsertBefore(insList[insList.Count - 1], callStop);
+            // Insert call to stop before every return
+            for (int i = insList.Count - 1; i >= 0; i--)
+            {
+                if (insList[i].OpCode == OpCodes.Ret)
+                    proc.InsertBefore(insList[i], callStop);
+            }
+
+            // Insert call to start at the beginning
             proc.InsertBefore(insList[0], callStart);
         }
 
