@@ -31,14 +31,15 @@ namespace PatchAsm
                 MethodDefinition stopFunc = tUtils.Methods.First(x => x.Name == "StopTimed");
 
                 //DumpWholeFunction(asm, "Part", "requestResource");
-
-                PatchFunc(asm, "Part", "requestResource", startFunc, stopFunc);
-
-                PatchFunc(asm, "ResourceBroker", "RequestResource", startFunc, stopFunc);
-
-                PatchFunc(asm, "ResourceBroker", "StoreResource", startFunc, stopFunc);
-
+                //PatchFunc(asm, "Part", "requestResource", startFunc, stopFunc);
                 //DumpWholeFunction(asm, "Part", "requestResource");
+
+                //DumpWholeFunction(asm, "ResourceConverter", "ProcessRecipe");
+                PatchFunc(asm, "ResourceConverter", "ProcessRecipe", startFunc, stopFunc);
+                //DumpWholeFunction(asm, "ResourceConverter", "ProcessRecipe");
+
+                //PatchFunc(asm, "ResourceBroker", "RequestResource", startFunc, stopFunc);
+                //PatchFunc(asm, "ResourceBroker", "StoreResource", startFunc, stopFunc);
 
                 log.Debug("Writing file {0}", outfilename);
                 asm.Write(outfilename);
