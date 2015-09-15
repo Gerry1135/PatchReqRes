@@ -46,7 +46,7 @@ namespace PatchAsm
         private void PatchFunc(AssemblyDefinition asm, String TypeName, String FuncName, MethodDefinition startFunc, MethodDefinition stopFunc)
         {
             log.Info("Patching {0}.{1}", TypeName, FuncName);
-            //DumpWholeFunction(asm, "ResourceConverter", "ProcessRecipe", "Before");
+            //DumpWholeFunction(asm, TypeName, FuncName, "Before");
 
             TypeDefinition type = asm.MainModule.GetType(TypeName);
 
@@ -68,7 +68,7 @@ namespace PatchAsm
             // Insert call to start at the beginning
             proc.InsertBefore(insList[0], callStart);
 
-            //DumpWholeFunction(asm, "ResourceConverter", "ProcessRecipe", "After");
+            //DumpWholeFunction(asm, TypeName, FuncName, "After");
             log.Info("{0}.{1} patched ok", TypeName, FuncName);
         }
 
