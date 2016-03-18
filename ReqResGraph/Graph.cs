@@ -5,29 +5,43 @@ using UnityEngine;
 
 namespace ReqResGraph
 {
+    public class ChannelValues
+    {
+        public const int width = 500;
+        public const int height = 100;
+
+        public ChannelValues()
+        {
+            values = new double[width];
+            texGraph = new Texture2D(width, height);
+        }
+
+        public double[] values;
+        public long ticksAtStart;
+        public double lastValue;
+        public String lastValueStr;
+        public Texture2D texGraph;
+    }
+    
     [KSPAddon(KSPAddon.Startup.Instantly, false)]
     public class Graph : MonoBehaviour
     {
-        private const int width = 500;
-        private const int height = 100;
+        private const int NumChannels = 4;
 
         private Rect windowPos = new Rect(80, 80, 400, 50);
         private bool showUI = false;
-        readonly Texture2D texGraph = new Texture2D(width, height);
-        private double[] values = new double[width];
+
+        private ChannelValues[] dataarray;
 
         int valIndex = 0;
         int lastRendered = 0;
 
         long startTime;
         long ticksPerSec;
-        long ticksAtStart;
 
         bool fullUpdate = false;
 
         const String lastValuePattern = "Last: {0}%";
-        double lastValue;
-        String lastValueStr;
 
         Color[] blackLine;
         Color[] redLine;
@@ -43,10 +57,10 @@ namespace ReqResGraph
         {
             DontDestroyOnLoad(gameObject);
 
-            redLine = new Color[height];
-            greenLine = new Color[height];
-            blueLine = new Color[height];
-            blackLine = new Color[height];
+            redLine = new Color[ChannelValues.height];
+            greenLine = new Color[ChannelValues.height];
+            blueLine = new Color[ChannelValues.height];
+            blackLine = new Color[ChannelValues.height];
             for (int i = 0; i < blackLine.Length; i++)
             {
                 blackLine[i] = Color.black;
@@ -55,17 +69,23 @@ namespace ReqResGraph
                 blueLine[i] = Color.blue;
             }
 
-            for (int i = 0; i < width; i++)
-                values[i] = 0.0;
+            dataarray = new ChannelValues[NumChannels];
 
-            lastValue = 0.0;
-            lastValueStr = String.Format(lastValuePattern, lastValue.ToString("N2"));
+            for (int i = 0; i < NumChannels; i++)
+            {
+                dataarray[i] = new ChannelValues();
+                ChannelValues data = dataarray[i];
+
+                for (int j = 0; j < ChannelValues.width; j++)
+                    data.values[j] = 0.0;
+
+                data.lastValue = 0.0;
+                data.lastValueStr = String.Format(lastValuePattern, data.lastValue.ToString("N2"));
+                data.ticksAtStart = TimerLib.Utils.GetTotalTicks(i);
+            }
 
             startTime = Stopwatch.GetTimestamp();
             ticksPerSec = Stopwatch.Frequency;
-            print("ticksPerSec = " + ticksPerSec);
-            ticksAtStart = TimerLib.Utils.GetTotalTicks();
-            print("ticksAtStart = " + ticksAtStart);
         }
 
         internal void OnDestroy()
@@ -80,24 +100,30 @@ namespace ReqResGraph
             //print("timeDelta = " + timeDelta);
             if (timeDelta > ticksPerSec)
             {
-                print("timeDelta = " + timeDelta);
-                long ticksAtEnd = TimerLib.Utils.GetTotalTicks();
-                //print("ticksAtEnd = " + ticksAtEnd);
-                long ticksDelta = ticksAtEnd - ticksAtStart;
-                print("ticksDelta = " + ticksDelta);
-                values[valIndex] = ((double)ticksDelta * 100.0 / (double)timeDelta);
-                print("value = " + values[valIndex]);
-                //print("calls = " + TimerLib.Utils.GetNumCalls());
+                //print("timeDelta = " + timeDelta);
 
-                if (values[valIndex] != lastValue)
+                for (int i = 0; i < NumChannels; i++)
                 {
-                    lastValue = values[valIndex];
-                    lastValueStr = String.Format(lastValuePattern, lastValue.ToString("N2"));
+                    ChannelValues data = dataarray[i];
+
+                    long ticksAtEnd = TimerLib.Utils.GetTotalTicks(i);
+                    //print("ticksAtEnd = " + ticksAtEnd);
+                    long ticksDelta = ticksAtEnd - data.ticksAtStart;
+                    //print("ticksDelta = " + ticksDelta);
+                    data.values[valIndex] = ((double)ticksDelta * 100.0 / (double)timeDelta);
+                    //print("value = " + data.values[valIndex]);
+
+                    if (data.values[valIndex] != data.lastValue)
+                    {
+                        data.lastValue = data.values[valIndex];
+                        data.lastValueStr = String.Format(lastValuePattern, data.lastValue.ToString("N4"));
+                    }
+
+                    data.ticksAtStart = ticksAtEnd;
                 }
 
                 startTime = endTime;
-                ticksAtStart = ticksAtEnd;
-                valIndex = (valIndex + 1) % width;
+                valIndex = (valIndex + 1) % ChannelValues.width;
             }
         }
 
@@ -116,35 +142,43 @@ namespace ReqResGraph
             if (fullUpdate)
             {
                 fullUpdate = false;
-                //lastRendered = (frameIndex - 1) % width;
+                lastRendered = (valIndex + 1) % ChannelValues.width;
             }
 
             // If we want to update this time
             if (lastRendered != valIndex)
             {
-                // Update the columns from lastRendered to frameIndex
-                if (lastRendered >= valIndex)
+                for (int i = 0; i < NumChannels; i++)
                 {
-                    for (int x = lastRendered; x < width; x++)
+                    // We're going to wrap this back round to the start so copy the value so 
+                    int startlastRend = lastRendered;
+
+                    ChannelValues data = dataarray[i];
+
+                    // Update the columns from lastRendered to frameIndex
+                    if (startlastRend >= valIndex)
                     {
-                        DrawColumn(texGraph, x, (int)values[x], redLine);
+                        for (int x = startlastRend; x < ChannelValues.width; x++)
+                        {
+                            DrawColumn(data.texGraph, x, (int)data.values[x], redLine);
+                        }
+
+                        startlastRend = 0;
                     }
 
-                    lastRendered = 0;
-                }
+                    for (int x = startlastRend; x < valIndex; x++)
+                    {
+                        DrawColumn(data.texGraph, x, (int)data.values[x], redLine);
+                    }
 
-                for (int x = lastRendered; x < valIndex; x++)
-                {
-                    DrawColumn(texGraph, x, (int)values[x], redLine);
+                    if (valIndex < ChannelValues.width)
+                        data.texGraph.SetPixels(valIndex, 0, 1, ChannelValues.height, blackLine);
+                    if (valIndex != ChannelValues.width - 2)
+                        data.texGraph.SetPixels((valIndex + 1) % ChannelValues.width, 0, 1, ChannelValues.height, blackLine);
+                    data.texGraph.Apply();
                 }
 
                 lastRendered = valIndex;
-
-                if (valIndex < width)
-                    texGraph.SetPixels(valIndex, 0, 1, height, blackLine);
-                if (valIndex != width - 2)
-                    texGraph.SetPixels((valIndex + 1) % width, 0, 1, height, blackLine);
-                texGraph.Apply();
             }
             //print("Update End");
         }
@@ -152,11 +186,11 @@ namespace ReqResGraph
         private void DrawColumn(Texture2D tex, int x, int y, Color[] col)
         {
             //print("drawcol(" + x + ", " + y + ")");
-            if (y > height - 1)
-                y = height - 1;
+            if (y > ChannelValues.height - 1)
+                y = ChannelValues.height - 1;
             tex.SetPixels(x, 0, 1, y + 1, col);
-            if (y < height - 1)
-                tex.SetPixels(x, y + 1, 1, height - 1 - y, blackLine);
+            if (y < ChannelValues.height - 1)
+                tex.SetPixels(x, y + 1, 1, ChannelValues.height - 1 - y, blackLine);
         }
 
         public void OnGUI()
@@ -165,11 +199,11 @@ namespace ReqResGraph
                 labelStyle = new GUIStyle(GUI.skin.label);
 
             if (wndWidth == null)
-                wndWidth = GUILayout.Width(width);
+                wndWidth = GUILayout.Width(ChannelValues.width);
             if (wndHeight == null)
-                wndHeight = GUILayout.Height(height);
+                wndHeight = GUILayout.Height(ChannelValues.height);
             if (graphHeight == null)
-                graphHeight = GUILayout.Height(height);
+                graphHeight = GUILayout.Height(ChannelValues.height);
 
             if (showUI)
                 windowPos = GUILayout.Window(2461275, windowPos, WindowGUI, "Profile Graph", wndWidth, wndHeight);
@@ -178,13 +212,19 @@ namespace ReqResGraph
         public void WindowGUI(int windowID)
         {
             GUILayout.BeginVertical();
+            for (int i = 0; i < NumChannels; i++)
+            {
+                ChannelValues data = dataarray[i];
 
-            GUILayout.Box(texGraph, wndWidth, graphHeight);
+                GUILayout.BeginVertical();
+                GUILayout.Box(data.texGraph, wndWidth, graphHeight);
 
-            GUILayout.BeginHorizontal();
-            GUILayout.Label(lastValueStr, labelStyle);
-            GUILayout.EndHorizontal();
+                GUILayout.BeginHorizontal();
+                GUILayout.Label(data.lastValueStr, labelStyle);
+                GUILayout.EndHorizontal();
 
+                GUILayout.EndVertical();
+            }
             GUILayout.EndVertical();
 
             GUI.DragWindow();
