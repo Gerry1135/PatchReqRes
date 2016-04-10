@@ -57,6 +57,8 @@ namespace ReqResGraph
         {
             DontDestroyOnLoad(gameObject);
 
+            TimerLib.Utils.PrintActive();
+
             redLine = new Color[ChannelValues.height];
             greenLine = new Color[ChannelValues.height];
             blueLine = new Color[ChannelValues.height];

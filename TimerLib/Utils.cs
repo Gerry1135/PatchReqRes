@@ -25,6 +25,11 @@ namespace TimerLib
         private static long depth = 0;
         private static int CurrentChannel = -1;
 
+        public static void PrintActive()
+        {
+            MonoBehaviour.print("TimerLib is active");
+        }
+
         public static void StartTimed0()
         {
             StartTimed(0);
