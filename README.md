@@ -25,6 +25,7 @@ Initial setup of the "mod" is a little complex because I can't be bothered to ma
 * Copy TimerLib\bin\Release\TimerLib.dll into KSP_Data\Managed
 * Copy PatchAsm\bin\Release\PatchAsm.exe into KSP_Data\Managed and run it
 * Copy ReqResGraph\bin\Release\ReqResGraph.dll into GameData
+* Copy TimerLib\bin\Release\TimerLib.dll into GameData
 * Run KSP and hit Mod-Minus at any time to toggle the display of the graph
 
 If you change the functions being timed then you will need to rebuild and then copy PatchAsm\bin\Release\PatchAsm.exe into KSP_Data\Managed and run it again (while KSP is not running).
