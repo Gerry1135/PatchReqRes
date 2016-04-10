@@ -69,9 +69,9 @@ namespace ReqResGraph
                 blueLine[i] = Color.blue;
             }
 
-            dataarray = new ChannelValues[NumChannels];
+            dataarray = new ChannelValues[NumChannels + 1];
 
-            for (int i = 0; i < NumChannels; i++)
+            for (int i = 0; i < NumChannels + 1; i++)
             {
                 dataarray[i] = new ChannelValues();
                 ChannelValues data = dataarray[i];
@@ -102,6 +102,8 @@ namespace ReqResGraph
             {
                 //print("timeDelta = " + timeDelta);
 
+                double totalFrac = 0.0d;
+
                 for (int i = 0; i < NumChannels; i++)
                 {
                     ChannelValues data = dataarray[i];
@@ -110,16 +112,26 @@ namespace ReqResGraph
                     //print("ticksAtEnd = " + ticksAtEnd);
                     long ticksDelta = ticksAtEnd - data.ticksAtStart;
                     //print("ticksDelta = " + ticksDelta);
-                    data.values[valIndex] = ((double)ticksDelta * 100.0 / (double)timeDelta);
-                    //print("value = " + data.values[valIndex]);
+                    double frac = ((double)ticksDelta * 100.0 / (double)timeDelta);
+                    //print("value = " + frac);
+                    data.values[valIndex] = frac;
+                    totalFrac += frac;
 
-                    if (data.values[valIndex] != data.lastValue)
+                    if (frac != data.lastValue)
                     {
-                        data.lastValue = data.values[valIndex];
-                        data.lastValueStr = String.Format(lastValuePattern, data.lastValue.ToString("N4"));
+                        data.lastValue = frac;
+                        data.lastValueStr = String.Format(lastValuePattern, frac.ToString("N4"));
                     }
 
                     data.ticksAtStart = ticksAtEnd;
+                }
+
+                ChannelValues totalData = dataarray[NumChannels];
+                totalData.values[valIndex] = totalFrac;
+                if (totalFrac != totalData.lastValue)
+                {
+                    totalData.lastValue = totalFrac;
+                    totalData.lastValueStr = String.Format(lastValuePattern, totalFrac.ToString("N4"));
                 }
 
                 startTime = endTime;
@@ -148,7 +160,7 @@ namespace ReqResGraph
             // If we want to update this time
             if (lastRendered != valIndex)
             {
-                for (int i = 0; i < NumChannels; i++)
+                for (int i = 0; i < NumChannels + 1; i++)
                 {
                     // We're going to wrap this back round to the start so copy the value so 
                     int startlastRend = lastRendered;
@@ -212,7 +224,7 @@ namespace ReqResGraph
         public void WindowGUI(int windowID)
         {
             GUILayout.BeginVertical();
-            for (int i = 0; i < NumChannels; i++)
+            for (int i = 0; i < NumChannels + 1; i++)
             {
                 ChannelValues data = dataarray[i];
 
