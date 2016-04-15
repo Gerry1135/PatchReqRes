@@ -32,15 +32,14 @@ namespace PatchAsm
                 MethodDefinition stopFunc = tUtils.Methods.First(x => x.Name == "StopTimed");
 
                 PatchFunc(asm, "Part", "requestResource", startFunc0, stopFunc);
-                //PatchFunc(asm, "Part", "TransferResource", startFunc0, stopFunc);
-                //PatchFunc(asm, "Part", "GetConnectedResources", startFunc0, stopFunc);
+                PatchFunc(asm, "Part", "TransferResource", startFunc0, stopFunc);
+                PatchFunc(asm, "Part", "GetConnectedResources", startFunc0, stopFunc);
 
                 PatchFunc(asm, "ModuleDockingNode", "FixedUpdate", startFunc1, stopFunc);
 
                 PatchFunc(asm, "ResourceConverter", "ProcessRecipe", startFunc2, stopFunc);
 
-                // This doesn't work too well, 
-                //PatchFunc(asm, "FlightIntegrator", "FixedUpdate", startFunc3, stopFunc);
+                PatchFunc(asm, "FlightIntegrator", "FixedUpdate", startFunc3, stopFunc);
 
                 Print("Writing file {0}", outfilename);
                 asm.Write(outfilename);
@@ -66,13 +65,18 @@ namespace PatchAsm
                 ILProcessor proc = func.Body.GetILProcessor();
 
                 var callStart = proc.Create(OpCodes.Call, func.Module.Import(startFunc));
-                var callStop = proc.Create(OpCodes.Call, func.Module.Import(stopFunc));
+                var methodStop = func.Module.Import(stopFunc);
+                var ret = proc.Create(OpCodes.Ret);
 
                 // Insert call to stop before every return
                 for (int i = insList.Count - 1; i >= 0; i--)
                 {
                     if (insList[i].OpCode == OpCodes.Ret)
-                        proc.InsertBefore(insList[i], callStop);
+                    {
+                        proc.InsertAfter(insList[i], ret);
+                        insList[i].OpCode = OpCodes.Call;
+                        insList[i].Operand = methodStop;
+                    }
                 }
 
                 // Insert call to start at the beginning
