@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,34 +15,53 @@ namespace PatchAsm
         {
             try
             {
+                var modPath = "..\\..\\GameData\\ProfileGraph\\";
+                var cfgfilename = modPath + "PluginData\\ProfileGraph\\profile.cfg";
+
                 var infilename = "Assembly-CSharp.orig.dll";
                 var outfilename = "Assembly-CSharp.dll";
+
                 if (!File.Exists(infilename))
                 {
-                    Print("File {0} not found! Please run me in KSP_DATA\\Managed", infilename);
-                    return;
+                    File.Move(outfilename, infilename);
                 }
                 var asm = AssemblyDefinition.ReadAssembly(infilename);
 
-                var asmLib = AssemblyDefinition.ReadAssembly("TimerLib.dll");
-                TypeDefinition tUtils = asmLib.MainModule.GetType("TimerLib.Utils");
-                MethodDefinition startFunc0 = tUtils.Methods.First(x => x.Name == "StartTimed0");
-                MethodDefinition startFunc1 = tUtils.Methods.First(x => x.Name == "StartTimed1");
-                MethodDefinition startFunc2 = tUtils.Methods.First(x => x.Name == "StartTimed2");
-                MethodDefinition startFunc3 = tUtils.Methods.First(x => x.Name == "StartTimed3");
+                var asmLib = AssemblyDefinition.ReadAssembly(modPath + "ProfileGraph.dll");
+                TypeDefinition tUtils = asmLib.MainModule.GetType("ProfileGraph.Utils");
+                MethodDefinition startFunc = tUtils.Methods.First(x => x.Name == "StartTimed");
                 MethodDefinition stopFunc = tUtils.Methods.First(x => x.Name == "StopTimed");
 
-                PatchFunc(asm, "Part", "requestResource", startFunc0, stopFunc);
-                PatchFunc(asm, "Part", "TransferResource", startFunc0, stopFunc);
-                PatchFunc(asm, "Part", "GetConnectedResources", startFunc0, stopFunc);
+                // Read in the profile config
+                int channel = 0;
 
-                PatchFunc(asm, "ModuleDockingNode", "FixedUpdate", startFunc1, stopFunc);
-                //PatchFunc(asm, "Contracts.ContractSystem", "UpdateContracts", startFunc1, stopFunc);
+                // Loop through the lines
 
-                //PatchFunc(asm, "ResourceConverter", "ProcessRecipe", startFunc2, stopFunc);
-                PatchFunc(asm, "Vessel", "FixedUpdate", startFunc2, stopFunc);
-
-                PatchFunc(asm, "FlightIntegrator", "FixedUpdate", startFunc3, stopFunc);
+                // Must be an odd number of strings
+                // Ignore the first (name) and process the rest in pairs
+                Print("Loading config from " + cfgfilename);
+                if (File.Exists(cfgfilename))
+                {
+                    String[] lines = File.ReadAllLines(cfgfilename);
+                    for (int i = 0; i < lines.Length; i++)
+                    {
+                        String[] line = lines[i].Split(',');
+                        if (line.Length % 2 == 1)
+                        {
+                            for (int index = 1; index < line.Length; index += 2)
+                            {
+                                PatchFunc(asm, line[index].Trim(), line[index+1].Trim(), startFunc, stopFunc, channel);
+                            }
+                            channel++;
+                        }
+                        else
+                        {
+                            Print("Ignoring invalid line in settings: '{0}'", lines[i]);
+                        }
+                    }
+                }
+                else
+                    Print("Can't find profile.cfg");
 
                 Print("Writing file {0}", outfilename);
                 asm.Write(outfilename);
@@ -54,9 +74,9 @@ namespace PatchAsm
             }
         }
 
-        private void PatchFunc(AssemblyDefinition asm, String TypeName, String FuncName, MethodDefinition startFunc, MethodDefinition stopFunc)
+        private void PatchFunc(AssemblyDefinition asm, String TypeName, String FuncName, MethodDefinition startFunc, MethodDefinition stopFunc, int channel)
         {
-            Print("Patching {0}.{1}", TypeName, FuncName);
+            Print("Patching {0}.{1} for channel {2}", TypeName, FuncName, channel);
 
             TypeDefinition type = asm.MainModule.GetType(TypeName);
 
@@ -66,6 +86,7 @@ namespace PatchAsm
                 var insList = func.Body.Instructions;
                 ILProcessor proc = func.Body.GetILProcessor();
 
+                var loadChannel = proc.Create(OpCodes.Ldc_I4, channel);
                 var callStart = proc.Create(OpCodes.Call, func.Module.Import(startFunc));
                 var methodStop = func.Module.Import(stopFunc);
                 var ret = proc.Create(OpCodes.Ret);
@@ -83,6 +104,7 @@ namespace PatchAsm
 
                 // Insert call to start at the beginning
                 proc.InsertBefore(insList[0], callStart);
+                proc.InsertBefore(insList[0], loadChannel);
 
                 //DumpWholeFunction(func, "After");
                 Print("{0}.{1} patched ok", TypeName, FuncName);
@@ -123,6 +145,10 @@ namespace PatchAsm
         static void Main(string[] args)
         {
             new Program().Run();
+
+            Print("Press any key to continue");
+            while (!Console.KeyAvailable)
+                Thread.Sleep(100);
         }
     }
 }
