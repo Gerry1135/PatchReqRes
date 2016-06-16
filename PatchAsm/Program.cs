@@ -36,8 +36,10 @@ namespace PatchAsm
                 PatchFunc(asm, "Part", "GetConnectedResources", startFunc0, stopFunc);
 
                 PatchFunc(asm, "ModuleDockingNode", "FixedUpdate", startFunc1, stopFunc);
+                //PatchFunc(asm, "Contracts.ContractSystem", "UpdateContracts", startFunc1, stopFunc);
 
-                PatchFunc(asm, "ResourceConverter", "ProcessRecipe", startFunc2, stopFunc);
+                //PatchFunc(asm, "ResourceConverter", "ProcessRecipe", startFunc2, stopFunc);
+                PatchFunc(asm, "Vessel", "FixedUpdate", startFunc2, stopFunc);
 
                 PatchFunc(asm, "FlightIntegrator", "FixedUpdate", startFunc3, stopFunc);
 

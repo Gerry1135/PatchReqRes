@@ -18,7 +18,7 @@ namespace ReqResGraph
 
         public double[] values;
         public long ticksAtStart;
-        public double lastValue;
+        public int lastValue;
         public String lastValueStr;
         public Texture2D texGraph;
     }
@@ -81,7 +81,7 @@ namespace ReqResGraph
                 for (int j = 0; j < ChannelValues.width; j++)
                     data.values[j] = 0.0;
 
-                data.lastValue = 0.0;
+                data.lastValue = 0;
                 data.lastValueStr = String.Format(lastValuePattern, data.lastValue.ToString("N2"));
                 data.ticksAtStart = TimerLib.Utils.GetTotalTicks(i);
             }
@@ -95,6 +95,11 @@ namespace ReqResGraph
         }
 
         public void FixedUpdate()
+        {
+            TryUpdateData();
+        }
+
+        public void TryUpdateData()
         {
             // First thing is to record the times for this frame
             long endTime = Stopwatch.GetTimestamp();
@@ -119,9 +124,10 @@ namespace ReqResGraph
                     data.values[valIndex] = frac;
                     totalFrac += frac;
 
-                    if (frac != data.lastValue)
+                    int rounded = (int)(frac * 100d + 0.5d);
+                    if (rounded != data.lastValue)
                     {
-                        data.lastValue = frac;
+                        data.lastValue = rounded;
                         data.lastValueStr = String.Format(lastValuePattern, frac.ToString("N4"));
                     }
 
@@ -130,9 +136,10 @@ namespace ReqResGraph
 
                 ChannelValues totalData = dataarray[NumChannels];
                 totalData.values[valIndex] = totalFrac;
-                if (totalFrac != totalData.lastValue)
+                int roundedTotal = (int)(totalFrac * 100d + 0.5d);
+                if (roundedTotal != totalData.lastValue)
                 {
-                    totalData.lastValue = totalFrac;
+                    totalData.lastValue = roundedTotal;
                     totalData.lastValueStr = String.Format(lastValuePattern, totalFrac.ToString("N4"));
                 }
 
@@ -144,6 +151,8 @@ namespace ReqResGraph
         public void Update()
         {
             //print("Update Start");
+
+            TryUpdateData();
 
             if (GameSettings.MODIFIER_KEY.GetKey() && Input.GetKeyDown(KeyCode.Minus))
             {
@@ -195,6 +204,11 @@ namespace ReqResGraph
                 lastRendered = valIndex;
             }
             //print("Update End");
+        }
+
+        public void LateUpdate()
+        {
+            TryUpdateData();
         }
 
         private void DrawColumn(Texture2D tex, int x, int y, Color[] col)
