@@ -123,7 +123,7 @@ namespace ProfileGraph
                     if (rounded != data.lastValue)
                     {
                         data.lastValue = rounded;
-                        data.lastValueStr = String.Format(lastValuePattern, data.name, frac.ToString("N4"));
+                        data.lastValueStr = String.Format(lastValuePattern, data.name, frac.ToString("N2"));
                     }
 
                     data.ticksAtStart = ticksAtEnd;
@@ -135,7 +135,7 @@ namespace ProfileGraph
                 if (roundedTotal != totalData.lastValue)
                 {
                     totalData.lastValue = roundedTotal;
-                    totalData.lastValueStr = String.Format(lastValuePattern, totalData.name, totalFrac.ToString("N4"));
+                    totalData.lastValueStr = String.Format(lastValuePattern, totalData.name, totalFrac.ToString("N2"));
                 }
 
                 startTime = endTime;
