@@ -29,7 +29,7 @@ namespace ProfileGraph
     {
         private int NumChannels;
 
-        private string windowTitle = "ProfileGraph 1.0.0.0";
+        private string windowTitle = "ProfileGraph 1.0.0.1";
         private Rect windowPos = new Rect(80, 80, 400, 50);
         private bool showUI = false;
 
